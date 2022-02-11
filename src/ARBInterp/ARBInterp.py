@@ -527,6 +527,7 @@ class tricubic:
 			
 	def getFieldParams(self):
 		## Make sure coords are sorted correctly
+		## This sorts the data in 'F' style
 		self.inputfield = self.inputfield[self.inputfield[:,0].argsort()] 
 		self.inputfield = self.inputfield[self.inputfield[:,1].argsort(kind='mergesort')]
 		self.inputfield = self.inputfield[self.inputfield[:,2].argsort(kind='mergesort')]
@@ -543,6 +544,15 @@ class tricubic:
 		nPosz = len(zaxis)
 
 		self.nPos = np.array([nPosx-3, nPosy-3, nPosz-3]) # number of interpolatable cuboids per axis
+
+		self.x = xaxis[:, 0]  # axis coordinates
+		self.y = yaxis[:, 1]
+		self.z = zaxis[:, 2]
+		if self.inputfield.shape[1] == 4:
+			self.field = self.inputfield[:, 3].reshape(nPosx, nPosy, nPosz, order='F')
+		else:
+			self.field = np.stack([self.inputfield[:, j].reshape(nPosx, nPosy, nPosz, order='F')
+								for j in range(3, 6)], axis=0)
 
 		self.hx = np.abs((xaxis[0,0]-xaxis[1,0])) # grid spacing along each axis
 		self.hy = np.abs((yaxis[0,1]-yaxis[1,1]))
