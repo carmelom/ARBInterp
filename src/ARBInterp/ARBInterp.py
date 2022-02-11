@@ -4,7 +4,7 @@ import sys
 #######################release the schmoo########################################
 
 from .tricubic0 import Tricubic0 as tricubic0
-from .tricubic import Tricubic as tricubic
+from .tricubic import TricubicInterpolator as tricubic
 
 
 #######################release the schmoo########################################
