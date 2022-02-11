@@ -233,12 +233,10 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         self.alphan[:, -1] = np.nan
         self.Bn = self.inputfield[:, 3]
         # precalculate all coefficients
-        print("Calculate all coefficients")
         self.allCoeffs()
 
         self._call_single = self.field1
         self._call_array = self.field
-
 
     def calcCoefficients(self, alphaindex):
         # Find interpolation coefficients for a cuboid
@@ -248,27 +246,6 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         # Alpha coefficients
         self.alphan[:, alphaindex] = np.dot(self.A, self.Bn[inds])
         self.alphamask[alphaindex] = 1
-
-    def _cuboid_coordinates1(self, point):
-        # How many cuboids in is query point
-        iu = (point[0] - self.xIntMin) / self.hx
-        iv = (point[1] - self.yIntMin) / self.hy
-        iw = (point[2] - self.zIntMin) / self.hz
-        # Finds base coordinates of cuboid particle is in
-        ix = np.floor(iu)
-        iy = np.floor(iv)
-        iz = np.floor(iw)
-        # particle coordinates in unit cuboid
-        cuboidx = iu - ix
-        cuboidy = iv - iy
-        cuboidz = iw - iz
-        # Returns index of base cuboid
-        queryIndex = ix + iy * (self.nPos[0]) + iz * (self.nPos[0]) * (self.nPos[1])
-        queryIndex = queryIndex.astype(int)
-
-        queryCoords = np.asarray((iu - ix, iv - iy, iw - iz))
-
-        return queryIndex, queryCoords
 
     def field1(self, point, derivatives=False):
         """ Calculate field and derivatives at one single point
@@ -313,45 +290,42 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         ])
         return norm, grad, hess
 
-    def _cuboid_coordinates(self, points):
-        # Coords in cuboids
-        iu = (points[:, 0] - self.xIntMin) / self.hx
-        iv = (points[:, 1] - self.yIntMin) / self.hy
-        iw = (points[:, 2] - self.zIntMin) / self.hz
-
-        ### Finds base coordinates of cuboid particles are in ###
+    def _cuboid_coordinates1(self, point):
+        # How many cuboids in is query point
+        iu = (point[0] - self.xIntMin) / self.hx
+        iv = (point[1] - self.yIntMin) / self.hy
+        iw = (point[2] - self.zIntMin) / self.hz
+        # Finds base coordinates of cuboid particle is in
         ix = np.floor(iu)
         iy = np.floor(iv)
         iz = np.floor(iw)
+        # particle coordinates in unit cuboid
+        cuboidx = iu - ix
+        cuboidy = iv - iy
+        cuboidz = iw - iz
+        # Returns index of base cuboid
+        queryIndex = ix + iy * (self.nPos[0]) + iz * (self.nPos[0]) * (self.nPos[1])
+        queryIndex = queryIndex.astype(int)
 
-        ### Returns indices of base cuboids ###
-        queryInds = ix + iy * (self.nPos[0]) + iz * (self.nPos[0]) * (self.nPos[1])
-        queryInds[np.where(np.isnan(queryInds))] = self.nc
-        queryInds = queryInds.astype(int)
+        queryCoords = np.asarray((iu - ix, iv - iy, iw - iz))
 
-        # Coordinates of the sample in unit cuboid
-        queryCoords = np.stack((iu - ix, iv - iy, iw - iz), axis=1)
-        return queryInds, queryCoords
+        return queryIndex, queryCoords
 
     def field(self, points):
         points = self.nan_out_of_bounds(points)
-        queryInds, queryCoords = self._cuboid_coordinates(points)
-        cx, cy, cz = queryCoords.T
-        N = len(points)
+        queryInds, cx, cy, cz = self._cuboid_coordinates(points)
 
         x, y, z = self._pack_coords(cx, cy, cz, d=0)
         # Return coefficient matrix values, give NaN for invalid locations
         tn = self.alphan[:, queryInds]
         tn = np.transpose(tn)
 
-        field = np.reshape((tn * (x * y * z)).sum(axis=1), (N, 1))
+        field = np.reshape((tn * (x * y * z)).sum(axis=1), (-1, 1))
         return field
 
     def gradient(self, points):
         points = self.nan_out_of_bounds(points)
-        queryInds, queryCoords = self._cuboid_coordinates(points)
-        cx, cy, cz = queryCoords.T
-        N = len(points)
+        queryInds, cx, cy, cz = self._cuboid_coordinates(points)
 
         x, y, z = self._pack_coords(cx, cy, cz, d=0)
         xx, yy, zz = self._pack_coords(cx, cy, cz, d=1)
@@ -364,9 +338,7 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
 
     def hessian(self, points):
         points = self.nan_out_of_bounds(points)
-        queryInds, queryCoords = self._cuboid_coordinates(points)
-        cx, cy, cz = queryCoords.T
-        N = len(points)
+        queryInds, cx, cy, cz = self._cuboid_coordinates(points)
 
         x, y, z = self._pack_coords(cx, cy, cz, d=0)
         xx, yy, zz = self._pack_coords(cx, cy, cz, d=1)
@@ -387,6 +359,26 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         ]))
 
         return hess
+
+    def _cuboid_coordinates(self, points):
+        # Coords in cuboids
+        iu = (points[:, 0] - self.xIntMin) / self.hx
+        iv = (points[:, 1] - self.yIntMin) / self.hy
+        iw = (points[:, 2] - self.zIntMin) / self.hz
+
+        ### Finds base coordinates of cuboid particles are in ###
+        ix = np.floor(iu)
+        iy = np.floor(iv)
+        iz = np.floor(iw)
+
+        ### Returns indices of base cuboids ###
+        queryInds = ix + iy * (self.nPos[0]) + iz * (self.nPos[0]) * (self.nPos[1])
+        queryInds[np.where(np.isnan(queryInds))] = self.nc
+        queryInds = queryInds.astype(int)
+
+        # Coordinates of the sample in unit cuboid
+        cx, cy, cz = iu - ix, iv - iy, iw - iz
+        return queryInds, cx, cy, cz
 
     def _pack_coords(self, cx, cy, cz, d=0):
         zero = np.zeros(len(cx))
