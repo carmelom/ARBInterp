@@ -2,6 +2,10 @@
 
 <!--next-version-placeholder-->
 
+## v1.8.1 (15/02/2022)
+
+- New fork by CM, renamed and repackaged. Still refactoring code to improve the API.
+
 ## v1.8.0 (10/10/2021)
 
 - Skipping v1.7 since I never got around to uploading it.

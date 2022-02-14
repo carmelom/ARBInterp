@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "ARBInterp"
+name = "qinterp"
 version = "1.8.1"
 description = "Python tools for interpolating 3D or 4D fields"
-authors = ["Paul Walker"]
+authors = ["Paul Walker", "Carmelo Mordini"]
 license = "GNU General Public License v3.0"
 readme = "README.md"
 packages = [
-    { include = "ARBInterp", from = "src" }
+    { include = "qinterp", from = "src" }
 ]
 
 [tool.poetry.dependencies]

@@ -2,6 +2,8 @@
 
 Python tools for interpolating 3D or 4D fields
 
+Forked from https://github.com/DurhamDecLab/ARBInterp
+
 ## Introduction
 Python tools for interpolation of gridded data, either:
 
@@ -22,7 +24,7 @@ Background and 4D method see: https://arxiv.org/abs/1904.09869
 ## Installation
 
 ```bash
-$ pip install git+https://github.com/DurhamDecLab/ARBInterp.git
+$ pip install git+https://github.com/cmordini/qinterp.git
 ```
 As of version 1.8 I have tested on Python 3.9.6 and numpy 1.21.1. All Python 2 support is dropped.
 
@@ -86,4 +88,4 @@ Interested in contributing? Check out the contributing guidelines. Please note t
 
 ## Credits
 
-`ARBInterp` was created by Paul Walker. Packaged by Carmelo Mordini with [`cookiecutter`](https://cookiecutter.readthedocs.io/en/latest/) and the `py-pkgs-cookiecutter` [template](https://github.com/py-pkgs/py-pkgs-cookiecutter).
+`ARBInterp` was created by Paul Walker. Packaged by Carmelo Mordini as `qinterp` with [`cookiecutter`](https://cookiecutter.readthedocs.io/en/latest/) and the `py-pkgs-cookiecutter` [template](https://github.com/py-pkgs/py-pkgs-cookiecutter).
