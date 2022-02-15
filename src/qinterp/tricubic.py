@@ -233,7 +233,7 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         self.alphan[:, -1] = np.nan
         self.Bn = self.inputfield[:, 3]
         # precalculate all coefficients
-        self.allCoeffs()
+        # self.allCoeffs()
 
         self._call_single = self.field1
         self._call_array = self.field
@@ -309,6 +309,10 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
 
         queryCoords = np.asarray((iu - ix, iv - iy, iw - iz))
 
+        # Calculate alpha for cuboid if it doesn't exist
+        if self.alphamask[queryInd] == 0:
+            self.calcCoefficients(queryInd)
+
         return queryIndex, queryCoords
 
     def field(self, points):
@@ -378,6 +382,11 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
 
         # Coordinates of the sample in unit cuboid
         cx, cy, cz = iu - ix, iv - iy, iw - iz
+
+        # Returns the interpolate magnitude and / or gradients at the query coordinates
+        if len(queryInds[np.where(self.alphamask[queryInds] == 0)[0]]) > 0:
+            list(map(self.calcCoefficients, queryInds[np.where(self.alphamask[queryInds] == 0)[0]]))
+
         return queryInds, cx, cy, cz
 
     def _pack_coords(self, cx, cy, cz, d=0):
