@@ -11,19 +11,6 @@ Module docstring
 import numpy as np
 
 
-class TricubicInterpolator:
-    """Factory class
-    """
-
-    def __new__(cls, field, *args, **kwargs):
-        if field.ndim == 2 and field.shape[1] == 4:
-            return TricubicScalarInterpolator(field)
-        elif field.ndim == 2 and field.shape[1] == 6:
-            return TricubicVectorInterpolator(field)
-        else:
-            sys.exit('--- Input not shaped as expected - should be N x 4 or N x 6 ---')
-
-
 class TricubicInterpolatorBase:
 
     def __init__(self, field, *args, **kwargs):
@@ -310,8 +297,8 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         queryCoords = np.asarray((iu - ix, iv - iy, iw - iz))
 
         # Calculate alpha for cuboid if it doesn't exist
-        if self.alphamask[queryInd] == 0:
-            self.calcCoefficients(queryInd)
+        if self.alphamask[queryIndex] == 0:
+            self.calcCoefficients(queryIndex)
 
         return queryIndex, queryCoords
 

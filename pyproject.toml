@@ -10,17 +10,17 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9,<3.12"
 numpy = "^1.21.1"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^7.0.0"
 pytest-cov = "^3.0.0"
 Sphinx = "^4.4.0"
 myst-nb = "^0.13.2"
 sphinx-autoapi = "^1.8.4"
 sphinx-rtd-theme = "^1.0.0"
-
+scipy = "^1.9.1"
 
 [tool.semantic_release]
 version_variable = "pyproject.toml:version" # version location
