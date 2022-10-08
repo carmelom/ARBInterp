@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 from qinterp import TricubicScalarInterpolator
 from ARBinterp import tricubic as ARBTricubicInterpolator
+from scipy.interpolate import RegularGridInterpolator
 
 tests_dir = Path(__file__).parent
 data_path = tests_dir / "fields" / "Example3DScalarField.csv"
@@ -54,3 +55,21 @@ def test_scalar():
 
     assert np.allclose(fields, A['multi_field'])
     assert np.allclose(grads, A['multi_grad'])
+
+
+def _test_scipy():
+    data_path = tests_dir / "fields" / "Example3DScalarField.csv"
+    data = np.genfromtxt(data_path, delimiter=',')
+
+    tri = TricubicScalarInterpolator(data)
+    points = tri.x, tri.y, tri.z
+    values = tri.field_data
+
+    grid_interp = RegularGridInterpolator(points, values, method="cubic")
+
+    A = np.load(tests_dir / "fields" / "Example3DScalarFieldResults.npz")
+    coords = A['coords']
+
+    field = grid_interp(coords[3])
+
+    assert np.allclose(field, A['single_field'])
