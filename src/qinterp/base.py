@@ -23,27 +23,24 @@ class TricubicInterpolatorBase:
         self.alphamask = np.zeros((self.nc + 1, 1))
         self.alphamask[-1] = 1
 
-    def _call(self, query):
-        try:
-            if query.shape[1] > 1:
-                return self._call_array(query)
-            else:
-                return self._call_single(query)
-        except IndexError:
-            return self._call_single(query)
+    def __call__(self, xi, d=0):
+        if d == 0:
+            return self.field(xi)
+        elif d == 1:
+            return self.gradient(xi)
+        elif d == 2:
+            return self.hessian(xi)
+        else:
+            raise NotImplementedError
 
-    def __call__(self, query):
-        return self._call(query)
+    def field(self, xi):
+        return NotImplementedError
 
-    def Query(self, query):
-        # for backward copatiblility
-        return self._call(query)
+    def gradient(self, xi):
+        return NotImplementedError
 
-    def _call_single(self, point):
-        raise NotImplementedError
-
-    def _call_array(self, point):
-        raise NotImplementedError
+    def hessian(self, xi):
+        return NotImplementedError
 
     def getFieldParams(self):
         # Make sure coords are sorted correctly

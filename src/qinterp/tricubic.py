@@ -18,9 +18,6 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         # precalculate all coefficients
         # self.allCoeffs()
 
-        self._call_single = self.field1
-        self._call_array = self.field
-
     def calcCoefficients(self, alphaindex):
         # Find interpolation coefficients for a cuboid
         realindex = self.basePointInds[alphaindex]
@@ -30,48 +27,75 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         self.alphan[:, alphaindex] = np.dot(self.A, self.Bn[inds])
         self.alphamask[alphaindex] = 1
 
-    def field1(self, point, derivatives=False):
+    def field(self, xi):
+        if xi.ndim == 1:
+            return self._field1(xi)
+        return self._field(xi)
+
+    def gradient(self, xi):
+        if xi.ndim == 1:
+            return self._gradient1(xi)
+        return self._gradient(xi)
+
+    def hessian(self, xi):
+        if xi.ndim == 1:
+            return self._hessian1(xi)
+        return self._hessian(xi)
+
+    def _field1(self, point):
         """ Calculate field and derivatives at one single point
         """
-        # Removes particles that are outside of interpolation volume
         if self.check_out_of_bounds(point):
             return np.nan
 
-        queryIndex, (cuboidx, cuboidy, cuboidz) = self._cuboid_coordinates1(point)
-        # interpolated values
+        queryIndex, cx, cy, cz = self._cuboid_coordinates1(point)
         tn = self.alphan[:, queryIndex]
 
-        # 4-vectors for finding interpolated values
-        x = np.tile(np.array([1, cuboidx, cuboidx**2, cuboidx**3]), 16)
-        y = np.tile(np.repeat(np.array([1, cuboidy, cuboidy**2, cuboidy**3]), 4), 4)
-        z = np.repeat(np.array([1, cuboidz, cuboidz**2, cuboidz**3]), 16)
+        x, y, z = self._pack_coords1(cx, cy, cz, d=0)
 
-        # Magnitude
         norm = np.inner(tn, (x * y * z))
-        if not derivatives:
-            return norm
+        return norm
 
-        # 4-vectors for finding interpolated gradients
-        xx = np.tile(np.array([0, 1, 2 * cuboidx, 3 * cuboidx**2]), 16)
-        yy = np.tile(np.repeat(np.array([0, 1, 2 * cuboidy, 3 * cuboidy**2]), 4), 4)
-        zz = np.repeat(np.array([0, 1, 2 * cuboidz, 3 * cuboidz**2]), 16)
+    def _gradient1(self, point):
+        """ Calculate gradient at one single point
+        """
+        if self.check_out_of_bounds(point):
+            return np.empty((3,)) * np.nan
 
-        # 4-vectors for finding interpolated hessian
-        xxx = np.tile(np.array([0, 0, 2, 6 * cuboidx]), 16)
-        yyy = np.tile(np.repeat(np.array([0, 0, 2, 6 * cuboidy]), 4), 4)
-        zzz = np.repeat(np.array([0, 0, 2, 6 * cuboidz]), 16)
+        queryIndex, cx, cy, cz = self._cuboid_coordinates1(point)
+        tn = self.alphan[:, queryIndex]
 
-        # gradient, hessian
+        x, y, z = self._pack_coords1(cx, cy, cz, d=0)
+        xx, yy, zz = self._pack_coords1(cx, cy, cz, d=1)
+
         grad = np.array([np.dot(tn, xx * y * z) / self.hx, np.dot(tn, x * yy * z) / self.hy, np.dot(tn, x * y * zz) / self.hz])
-        hxx, hxy, hxz = np.dot(tn, xxx * y * z) / self.hx / self.hx, np.dot(tn, xx * yy * z) / self.hy / self.hx, np.dot(tn, xx * y * zz) / self.hz / self.hx
-        hyy, hyz = np.dot(tn, x * yyy * z) / self.hy / self.hy, np.dot(tn, x * yy * zz) / self.hz / self.hy
+        return grad
+
+    def _hessian1(self, point):
+        """ Calculate curvature at one single point
+        """
+        if self.check_out_of_bounds(point):
+            return np.empty((3, 3)) * np.nan
+
+        queryIndex, cx, cy, cz = self._cuboid_coordinates1(point)
+        tn = self.alphan[:, queryIndex]
+
+        x, y, z = self._pack_coords1(cx, cy, cz, d=0)
+        xx, yy, zz = self._pack_coords1(cx, cy, cz, d=1)
+        xxx, yyy, zzz = self._pack_coords1(cx, cy, cz, d=2)
+
+        hxx = np.dot(tn, xxx * y * z) / self.hx / self.hx
+        hxy = np.dot(tn, xx * yy * z) / self.hy / self.hx
+        hxz = np.dot(tn, xx * y * zz) / self.hz / self.hx
+        hyy = np.dot(tn, x * yyy * z) / self.hy / self.hy
+        hyz = np.dot(tn, x * yy * zz) / self.hz / self.hy
         hzz = np.dot(tn, x * y * zzz) / self.hz / self.hz
         hess = np.array([
             [hxx, hxy, hxz],
             [hxy, hyy, hyz],
             [hxz, hyz, hzz],
         ])
-        return norm, grad, hess
+        return hess
 
     def _cuboid_coordinates1(self, point):
         # How many cuboids in is query point
@@ -83,22 +107,39 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         iy = np.floor(iv)
         iz = np.floor(iw)
         # particle coordinates in unit cuboid
-        cuboidx = iu - ix
-        cuboidy = iv - iy
-        cuboidz = iw - iz
+        cx = iu - ix
+        cy = iv - iy
+        cz = iw - iz
         # Returns index of base cuboid
         queryIndex = ix + iy * (self.nPos[0]) + iz * (self.nPos[0]) * (self.nPos[1])
         queryIndex = queryIndex.astype(int)
-
-        queryCoords = np.asarray((iu - ix, iv - iy, iw - iz))
 
         # Calculate alpha for cuboid if it doesn't exist
         if self.alphamask[queryIndex] == 0:
             self.calcCoefficients(queryIndex)
 
-        return queryIndex, queryCoords
+        return queryIndex, cx, cy, cz
 
-    def field(self, points):
+    def _pack_coords1(self, cx, cy, cz, d=0):
+        if d == 0:
+            x = np.tile(np.array([1, cx, cx**2, cx**3]), 16)
+            y = np.tile(np.repeat(np.array([1, cy, cy**2, cy**3]), 4), 4)
+            z = np.repeat(np.array([1, cz, cz**2, cz**3]), 16)
+        elif d == 1:
+            # 4-vectors for finding interpolated gradient
+            x = np.tile(np.array([0, 1, 2 * cx, 3 * cx**2]), 16)
+            y = np.tile(np.repeat(np.array([0, 1, 2 * cy, 3 * cy**2]), 4), 4)
+            z = np.repeat(np.array([0, 1, 2 * cz, 3 * cz**2]), 16)
+        elif d == 2:
+            # 4-vectors for finding interpolated hessian
+            x = np.tile(np.array([0, 0, 2, 6 * cx]), 16)
+            y = np.tile(np.repeat(np.array([0, 0, 2, 6 * cy]), 4), 4)
+            z = np.repeat(np.array([0, 0, 2, 6 * cz]), 16)
+        else:
+            raise NotImplementedError
+        return x, y, z
+
+    def _field(self, points):
         points = self.nan_out_of_bounds(points)
         queryInds, cx, cy, cz = self._cuboid_coordinates(points)
 
@@ -110,7 +151,7 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         field = np.reshape((tn * (x * y * z)).sum(axis=1), (-1, 1))
         return field
 
-    def gradient(self, points):
+    def _gradient(self, points):
         points = self.nan_out_of_bounds(points)
         queryInds, cx, cy, cz = self._cuboid_coordinates(points)
 
@@ -123,7 +164,7 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         grad = np.transpose(np.array([((tn * (xx * y * z)) / self.hx).sum(axis=1), ((tn * (x * yy * z)) / self.hy).sum(axis=1), ((tn * (x * y * zz)) / self.hz).sum(axis=1)]))
         return grad
 
-    def hessian(self, points):
+    def _hessian(self, points):
         points = self.nan_out_of_bounds(points)
         queryInds, cx, cy, cz = self._cuboid_coordinates(points)
 

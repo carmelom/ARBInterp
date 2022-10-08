@@ -44,8 +44,10 @@ def test_scalar():
 
     A = np.load(tests_dir / "fields" / "Example3DScalarFieldResults.npz")
     coords = A['coords']
+    xi = coords[3]
 
-    field, grad, hessian = tri.field1(coords[3], derivatives=True)
+    field = tri.field(xi)
+    grad = tri.gradient(xi)
 
     assert np.allclose(field, A['single_field'])
     assert np.allclose(grad, A['single_grad'])
@@ -55,6 +57,7 @@ def test_scalar():
 
     assert np.allclose(fields, A['multi_field'])
     assert np.allclose(grads, A['multi_grad'])
+    assert np.allclose(tri(coords[3], d=2), tri.hessian(coords)[3])
 
 
 def _test_scipy():
