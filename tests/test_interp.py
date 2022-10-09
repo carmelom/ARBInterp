@@ -7,17 +7,17 @@
 from pathlib import Path
 import numpy as np
 from qinterp import TricubicScalarInterpolator
-from ARBinterp import tricubic as ARBTricubicInterpolator
+from ARBInterp.ARBInterp import tricubic
 from scipy.interpolate import RegularGridInterpolator
 
 tests_dir = Path(__file__).parent
 data_path = tests_dir / "fields" / "Example3DScalarField.csv"
-interp_data_path = tests_dir / "fields" / "Example3DScalarFieldResults",
+interp_data_path = tests_dir / "fields" / "Example3DScalarFieldResults.npz"
 
 
-def make_interp_data():
+def test_make_interp_data():
     data = np.genfromtxt(data_path, delimiter=',')
-    Run = ArbTricubicInterpolator(data)
+    Run = tricubic(data)
 
     coords = np.zeros((20, 3))
     coords[:, 0] = np.linspace(-2e-3, 2e-3, 20)
@@ -26,10 +26,11 @@ def make_interp_data():
 
     field, grad = Run.Query((coords[3]))
     fields, grads = Run.Query(coords)
-    np.savez(
-        coords=coords, single_field=field, single_grad=grad,
-        multi_field=fields, multi_grad=grads
-    )
+    np.savez(interp_data_path,
+             coords=coords, single_field=field, single_grad=grad,
+             multi_field=fields, multi_grad=grads
+             )
+    assert interp_data_path.exists()
 
 
 def test_scalar():
@@ -37,12 +38,10 @@ def test_scalar():
     as the original ARB one.
     The interpolated field is the one from examples/3D
     """
-    data_path = tests_dir / "fields" / "Example3DScalarField.csv"
     data = np.genfromtxt(data_path, delimiter=',')
-
     tri = TricubicScalarInterpolator(data)
 
-    A = np.load(tests_dir / "fields" / "Example3DScalarFieldResults.npz")
+    A = np.load(interp_data_path)
     coords = A['coords']
     xi = coords[3]
 
@@ -60,19 +59,18 @@ def test_scalar():
     assert np.allclose(tri(coords[3], d=2), tri.hessian(coords)[3])
 
 
-def _test_scipy():
-    data_path = tests_dir / "fields" / "Example3DScalarField.csv"
+def test_scipy():
     data = np.genfromtxt(data_path, delimiter=',')
-
     tri = TricubicScalarInterpolator(data)
     points = tri.x, tri.y, tri.z
     values = tri.field_data
 
     grid_interp = RegularGridInterpolator(points, values, method="cubic")
 
-    A = np.load(tests_dir / "fields" / "Example3DScalarFieldResults.npz")
+    A = np.load(interp_data_path)
     coords = A['coords']
 
-    field = grid_interp(coords[3])
-
-    assert np.allclose(field, A['single_field'])
+    field = grid_interp(coords)
+    max_rtol = (abs(field.squeeze() - A['multi_field'].squeeze()) / abs(field.squeeze())).max()
+    print(f"rtol: {max_rtol:.3e}")
+    assert max_rtol < 2e-1
