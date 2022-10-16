@@ -194,12 +194,12 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         iv = (points[:, 1] - self.yIntMin) / self.hy
         iw = (points[:, 2] - self.zIntMin) / self.hz
 
-        ### Finds base coordinates of cuboid particles are in ###
+        # Finds base coordinates of cuboid particles are in ###
         ix = np.floor(iu)
         iy = np.floor(iv)
         iz = np.floor(iw)
 
-        ### Returns indices of base cuboids ###
+        # Returns indices of base cuboids ###
         queryInds = ix + iy * (self.nPos[0]) + iz * (self.nPos[0]) * (self.nPos[1])
         queryInds[np.where(np.isnan(queryInds))] = self.nc
         queryInds = queryInds.astype(int)
