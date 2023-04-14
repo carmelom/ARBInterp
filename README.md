@@ -1,4 +1,6 @@
-# ARBInterp
+# qinterp
+
+[![DOI](https://zenodo.org/badge/458128372.svg)](https://zenodo.org/badge/latestdoi/458128372)
 
 Python tools for interpolating 3D or 4D fields
 
