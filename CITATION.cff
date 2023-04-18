@@ -12,6 +12,8 @@ authors:
     family-names: Mordini
     orcid: 'https://orcid.org/0000-0002-7162-4836'
     affiliation: ETH Zurich
+  - given-names: Paul
+    family-names: Walker
 identifiers:
   - type: doi
     value: 10.5281/zenodo.7829331
