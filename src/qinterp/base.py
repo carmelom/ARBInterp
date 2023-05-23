@@ -4,9 +4,11 @@
 # Created: 10/2022
 # Author: Carmelo Mordini <cmordini@phys.ethz.ch>
 
-
+from pathlib import Path
 import numpy as np
 
+file_path = Path(__file__).parent
+matrix_path = file_path / "scaled_by8_inverse_matrix.csv"
 
 class TricubicInterpolatorBase:
 
@@ -299,7 +301,7 @@ class TriquinticInterpolatorBase:
     def makeAMatrix(self):
         # Loads the triquintic interpolation matrix and creates finite difference matrix and combines them
         # Interpolation matrix (inverse)
-        Bm1_scaled_by_8 = np.genfromtxt('scaled_by8_inverse_matrix.csv', delimiter=',')
+        Bm1_scaled_by_8 = np.genfromtxt(matrix_path, delimiter=',')
         Bm1 = Bm1_scaled_by_8 / 8
 
         # This makes a finite-difference matrix to return the components of the "b"-vector
