@@ -13,7 +13,7 @@ matrix_path = file_path / "scaled_by8_inverse_matrix.csv"
 class TricubicInterpolatorBase:
 
     def __init__(self, field, *args, **kwargs):
-        self.eps = 10 * np.finfo(float).eps  # Machine precision of floating point number
+        self.eps = 0.1 * np.finfo(float).eps  # Machine precision of floating point number
         # Load field passed to class - can be x,y,z or norm of vector field, or scalar
         self.inputfield = field
         # Analyse field, get shapes etc
@@ -211,7 +211,7 @@ class TricubicInterpolatorBase:
 class TriquinticInterpolatorBase:
 
     def __init__(self, field, *args, **kwargs):
-        self.eps = 10 * np.finfo(float).eps  # Machine precision of floating point number
+        self.eps = 0.1 * np.finfo(float).eps  # Machine precision of floating point number
         # Load field passed to class - can be x,y,z or norm of vector field, or scalar
         self.inputfield = field
         # Analyse field, get shapes etc
@@ -260,7 +260,7 @@ class TriquinticInterpolatorBase:
         nPosy = len(yaxis)
         nPosz = len(zaxis)
 
-        # Compared to tricubic (nPosx-3) we now have (nPosx-5) because of higher derivatives
+        # Compared to tricubic (nPosx-3) we now have (nPosx-5) because of higher derivatives have
         # to be approximated
         self.nPos = np.array([nPosx - 5, nPosy - 5, nPosz - 5])  # number of interpolatable cuboids per axis
 
@@ -287,7 +287,7 @@ class TriquinticInterpolatorBase:
         self.zIntMax = self.inputfield[-2 * nPosx * nPosy - 1, 2]
 
         # Find base indices of all interpolatable cuboids
-        minI = nPosx * nPosy + nPosx + 2
+        minI = 2 * nPosx * nPosy + 2 * nPosx + 2
         self.basePointInds = minI + np.arange(0, nPosx - 5, 1)
         temp = np.array([self.basePointInds + i * nPosx for i in range(nPosy - 5)])
         self.basePointInds = np.reshape(temp, (1, len(temp) * len(temp[0])))[0]
@@ -616,7 +616,7 @@ class TriquinticInterpolatorBase:
     def neighbourInd(self, ind0):
         # For base index ind0 this finds all 216 vertices of the 5x5x5 range of cuboids around it
         # It also returns the 7 neighbouring points
-        newind0 = ind0 - 1 - (self.nPos[0] + 5) * (self.nPos[1] + 6)
+        newind0 = ind0 - 2 - 2 * (self.nPos[0] + 5) * (self.nPos[1] + 5) - 2 * (self.nPos[1] + 5)
         bInds = np.zeros(216)
         bInds[0] = newind0
         bInds[1] = bInds[0] + 1
@@ -647,14 +647,14 @@ class TriquinticInterpolatorBase:
         """ Checks if query point is within interpolation bounds
             True if within
         """
-        return query[0] < self.xIntMin or query[0] >= self.xIntMax or query[1] < self.yIntMin or query[1] >= self.yIntMax or query[2] < self.zIntMin or query[2] >= self.zIntMax
+        return query[0] < self.xIntMin or query[0] > self.xIntMax or query[1] < self.yIntMin or query[1] > self.yIntMax or query[2] < self.zIntMin or query[2] > self.zIntMax
 
     def nan_out_of_bounds(self, query):
         # Removes particles that are outside of interpolation volume
         query[np.where(query[:, 0] < self.xIntMin)[0]] = np.nan
-        query[np.where(query[:, 0] >= self.xIntMax)[0]] = np.nan
+        query[np.where(query[:, 0] > self.xIntMax)[0]] = np.nan
         query[np.where(query[:, 1] < self.yIntMin)[0]] = np.nan
-        query[np.where(query[:, 1] >= self.yIntMax)[0]] = np.nan
+        query[np.where(query[:, 1] > self.yIntMax)[0]] = np.nan
         query[np.where(query[:, 2] < self.zIntMin)[0]] = np.nan
-        query[np.where(query[:, 2] >= self.zIntMax)[0]] = np.nan
+        query[np.where(query[:, 2] > self.zIntMax)[0]] = np.nan
         return query

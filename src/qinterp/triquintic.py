@@ -15,7 +15,7 @@ class TriquinticScalarInterpolator(TriquinticInterpolatorBase):
     def calcCoefficients(self, alphaindex):
         # Find interpolation coefficients for a cuboid
         realindex = self.basePointInds[alphaindex]
-        # Find other vertices of current cuboid, and all neighbours in 3x3x3 neighbouring array
+        # Find other vertices of current cuboid, and all neighbours in 6x6x6 neighbouring array
         inds = self.neighbourInd(realindex)
         # Alpha coefficients
         self.alphan[:, alphaindex] = np.dot(self.A, self.Bn[inds])
