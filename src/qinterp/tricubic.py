@@ -14,7 +14,25 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         super().__init__(field, *args, **kwargs)
         self.alphan = np.zeros((64, self.nc + 1))
         self.alphan[:, -1] = np.nan
-        self.Bn = self.inputfield[:, 3]
+        # self.Bn = self.inputfield[:, 3]
+        # Transform the field to be a 3D numpy array
+        nPosx = self.nPos[0] + 3
+        nPosy = self.nPos[1] + 3
+        nPosz = self.nPos[2] + 3
+        self.f3D = np.reshape(self.inputfield[:,3], (nPosx, nPosy, nPosz), order='F')
+        self.f3D_deriv = np.gradient(self.f3D)
+        f3D_xy = np.gradient(self.f3D_deriv[0], axis=1)
+        f3D_xz = np.gradient(self.f3D_deriv[0], axis=2)
+        f3D_yz = np.gradient(self.f3D_deriv[1], axis=2)
+        f3D_xyz = np.gradient(f3D_xy, axis=2)
+        fx = np.reshape(self.f3D_deriv[0], (nPosx * nPosy * nPosz, ), order='F')
+        fy = np.reshape(self.f3D_deriv[1], (nPosx * nPosy * nPosz, ), order='F')
+        fz = np.reshape(self.f3D_deriv[2], (nPosx * nPosy * nPosz, ), order='F')
+        fxy = np.reshape(f3D_xy, (nPosx * nPosy * nPosz, ), order='F')
+        fxz = np.reshape(f3D_xz, (nPosx * nPosy * nPosz, ), order='F')
+        fyz = np.reshape(f3D_yz, (nPosx * nPosy * nPosz, ), order='F')
+        fxyz = np.reshape(f3D_xyz, (nPosx * nPosy * nPosz, ), order='F')
+        self.Bn = np.array([self.inputfield[:, 3], fx, fy, fz, fxy, fxz, fyz, fxyz])
         # precalculate all coefficients
         # self.allCoeffs()
 
@@ -24,7 +42,11 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         # Find other vertices of current cuboid, and all neighbours in 3x3x3 neighbouring array
         inds = self.neighbourInd(realindex)
         # Alpha coefficients
-        self.alphan[:, alphaindex] = np.dot(self.A, self.Bn[inds])
+        # vals_unit_cube = np.dot(self.D, self.Bn[inds])
+        # self.alphan[:, alphaindex] = np.dot(self.A, vals_unit_cube)
+        vals_unit_cube = self.Bn[:, inds]
+        vals_unit_cube = np.reshape(vals_unit_cube, (len(inds) * 8, ), order='C')[:]
+        self.alphan[:, alphaindex] = np.dot(self.A, vals_unit_cube)
         self.alphamask[alphaindex] = 1
 
     def field(self, xi):

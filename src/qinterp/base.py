@@ -19,7 +19,7 @@ class TricubicInterpolatorBase:
         # Analyse field, get shapes etc
         self.getFieldParams()
         # Make coefficient matrix
-        self.A = self.makeAMatrix()
+        self.A, self.D = self.makeAMatrix()
 
         # Mask to identify where coefficients exist
         self.alphamask = np.zeros((self.nc + 1, 1))
@@ -164,24 +164,31 @@ class TricubicInterpolatorBase:
             D[j, C[i] - 13] = 0.125
             D[j, C[i] - 21] = -0.125
 
-        A = np.matmul(np.linalg.inv(B), D)
-        return A
+        # A = np.matmul(np.linalg.inv(B), D)
+        A = np.linalg.inv(B)
+        return A, D
 
     def neighbourInd(self, ind0):
         # For base index ind0 this finds all 64 vertices of the 3x3x3 range of cuboids around it
         # It also returns the 7 neighbouring points
-        newind0 = ind0 - 1 - (self.nPos[0] + 3) * (self.nPos[1] + 4)
-        bInds = np.zeros(64)
-        bInds[0] = newind0
-        bInds[1] = bInds[0] + 1
-        bInds[2] = bInds[1] + 1
-        bInds[3] = bInds[2] + 1
-        bInds[4:8] = bInds[:4] + self.nPos[0] + 3
-        bInds[8:12] = bInds[4:8] + self.nPos[0] + 3
-        bInds[12:16] = bInds[8:12] + self.nPos[0] + 3
-        bInds[16:32] = bInds[:16] + (self.nPos[0] + 3) * (self.nPos[1] + 3)
-        bInds[32:48] = bInds[16:32] + (self.nPos[0] + 3) * (self.nPos[1] + 3)
-        bInds[48:] = bInds[32:48] + (self.nPos[0] + 3) * (self.nPos[1] + 3)
+        # newind0 = ind0 - 1 - (self.nPos[0] + 3) * (self.nPos[1] + 4)
+        # bInds = np.zeros(64)
+        # bInds[0] = newind0
+        # bInds[1] = bInds[0] + 1
+        # bInds[2] = bInds[1] + 1
+        # bInds[3] = bInds[2] + 1
+        # bInds[4:8] = bInds[:4] + self.nPos[0] + 3
+        # bInds[8:12] = bInds[4:8] + self.nPos[0] + 3
+        # bInds[12:16] = bInds[8:12] + self.nPos[0] + 3
+        # bInds[16:32] = bInds[:16] + (self.nPos[0] + 3) * (self.nPos[1] + 3)
+        # bInds[32:48] = bInds[16:32] + (self.nPos[0] + 3) * (self.nPos[1] + 3)
+        # bInds[48:] = bInds[32:48] + (self.nPos[0] + 3) * (self.nPos[1] + 3)
+        # bInds = bInds.astype(int)
+        bInds = np.zeros(8)
+        bInds[0] = ind0
+        bInds[1] = ind0 + 1
+        bInds[2:4] = bInds[0:2] + self.nPos[0] + 3
+        bInds[4:8] = bInds[:4] + (self.nPos[1] + 3) * (self.nPos[0] + 3)
         bInds = bInds.astype(int)
         return bInds
 
@@ -195,7 +202,7 @@ class TricubicInterpolatorBase:
         """ Checks if query point is within interpolation bounds
             True if within
         """
-        return query[0] < self.xIntMin or query[0] >= self.xIntMax or query[1] < self.yIntMin or query[1] >= self.yIntMax or query[2] < self.zIntMin or query[2] >= self.zIntMax
+        return query[0] < self.xIntMin or query[0] > self.xIntMax or query[1] < self.yIntMin or query[1] > self.yIntMax or query[2] < self.zIntMin or query[2] > self.zIntMax
 
     def nan_out_of_bounds(self, query):
         # Removes particles that are outside of interpolation volume
