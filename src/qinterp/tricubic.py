@@ -5,6 +5,7 @@
 # Author: Carmelo Mordini <cmordini@phys.ethz.ch>
 
 import numpy as np
+import findiff as fd
 from .base import TricubicInterpolatorBase
 
 
@@ -19,12 +20,29 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         nPosx = self.nPos[0] + 3
         nPosy = self.nPos[1] + 3
         nPosz = self.nPos[2] + 3
-        self.f3D = np.reshape(self.inputfield[:,3], (nPosx, nPosy, nPosz), order='F')
-        self.f3D_deriv = np.gradient(self.f3D)
-        f3D_xy = np.gradient(self.f3D_deriv[0], axis=1)
-        f3D_xz = np.gradient(self.f3D_deriv[0], axis=2)
-        f3D_yz = np.gradient(self.f3D_deriv[1], axis=2)
-        f3D_xyz = np.gradient(f3D_xy, axis=2)
+        self.f3D = np.reshape(self.inputfield[:,3], (nPosx, nPosy, nPosz), order='F')        
+        # self.f3D_deriv = np.gradient(self.f3D)
+        # f3D_xy = np.gradient(self.f3D_deriv[0], axis=1)
+        # f3D_xz = np.gradient(self.f3D_deriv[0], axis=2)
+        # f3D_yz = np.gradient(self.f3D_deriv[1], axis=2)
+        # f3D_xyz = np.gradient(f3D_xy, axis=2)
+        ACC = 6
+        d_dx = fd.FinDiff(0, 1, 1, acc=ACC)
+        d_dy = fd.FinDiff(1, 1, 1, acc=ACC)
+        d_dz = fd.FinDiff(2, 1, 1, acc=ACC)
+        d2_dxdy = fd.FinDiff((0, 1, 1), (1, 1, 1), acc=ACC)
+        d2_dydz = fd.FinDiff((1, 1, 1), (2, 1, 1), acc=ACC)
+        d2_dxdz = fd.FinDiff((0, 1, 1), (2, 1, 1), acc=ACC)
+        d3_dxdydz = fd.FinDiff((0, 1, 1), (1, 1, 1), (2, 1, 1), acc=ACC)
+        self.f3D_deriv = []
+        self.f3D_deriv.append(d_dx(self.f3D))
+        self.f3D_deriv.append(d_dy(self.f3D))
+        self.f3D_deriv.append(d_dz(self.f3D))
+        f3D_xy = d2_dxdy(self.f3D)
+        f3D_yz = d2_dydz(self.f3D)
+        f3D_xz = d2_dxdz(self.f3D)
+        f3D_xyz = d3_dxdydz(self.f3D)
+        
         fx = np.reshape(self.f3D_deriv[0], (nPosx * nPosy * nPosz, ), order='F')
         fy = np.reshape(self.f3D_deriv[1], (nPosx * nPosy * nPosz, ), order='F')
         fz = np.reshape(self.f3D_deriv[2], (nPosx * nPosy * nPosz, ), order='F')
