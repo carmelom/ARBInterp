@@ -11,9 +11,9 @@ class TriquinticScalarInterpolator(TriquinticInterpolatorBase):
         self.alphan[:, -1] = np.nan
         # self.Bn = self.inputfield[:, 3]
         # Transform the field to be a 3D numpy array
-        nPosx = self.nPos[0] + 3
-        nPosy = self.nPos[1] + 3
-        nPosz = self.nPos[2] + 3
+        nPosx = self.nPos[0] + 5
+        nPosy = self.nPos[1] + 5
+        nPosz = self.nPos[2] + 5
         self.f3D = np.reshape(self.inputfield[:,3], (nPosx, nPosy, nPosz), order='F')
         ACC = 6
         d_dx = fd.FinDiff(0, 1, 1, acc=ACC)

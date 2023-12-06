@@ -646,8 +646,8 @@ class TriquinticInterpolatorBase:
         bInds = np.zeros(8)
         bInds[0] = ind0
         bInds[1] = ind0 + 1
-        bInds[2:4] = bInds[0:2] + self.nPos[0] + 3
-        bInds[4:8] = bInds[:4] + (self.nPos[1] + 3) * (self.nPos[0] + 3)
+        bInds[2:4] = bInds[0:2] + self.nPos[0] + 5
+        bInds[4:8] = bInds[:4] + (self.nPos[1] + 5) * (self.nPos[0] + 5)
         bInds = bInds.astype(int)
         return bInds
 
