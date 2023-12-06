@@ -1,4 +1,5 @@
 import numpy as np
+import findiff as fd
 from .base import TriquinticInterpolatorBase
 
 
@@ -8,7 +9,101 @@ class TriquinticScalarInterpolator(TriquinticInterpolatorBase):
         super().__init__(field, *args, **kwargs)
         self.alphan = np.zeros((216, self.nc + 1))
         self.alphan[:, -1] = np.nan
-        self.Bn = self.inputfield[:, 3]
+        # self.Bn = self.inputfield[:, 3]
+        # Transform the field to be a 3D numpy array
+        nPosx = self.nPos[0] + 3
+        nPosy = self.nPos[1] + 3
+        nPosz = self.nPos[2] + 3
+        self.f3D = np.reshape(self.inputfield[:,3], (nPosx, nPosy, nPosz), order='F')
+        ACC = 6
+        d_dx = fd.FinDiff(0, 1, 1, acc=ACC)
+        d_dy = fd.FinDiff(1, 1, 1, acc=ACC)
+        d_dz = fd.FinDiff(2, 1, 1, acc=ACC)
+        d2_dx2 = fd.FinDiff(0, 1, 2, acc=ACC)
+        d2_dxdy = fd.FinDiff((0, 1, 1), (1, 1, 1), acc=ACC)
+        d2_dxdz = fd.FinDiff((0, 1, 1), (2, 1, 1), acc=ACC)
+        d2_dy2 = fd.FinDiff(1, 1, 2, acc=ACC)
+        d2_dydz = fd.FinDiff((1, 1, 1), (2, 1, 1), acc=ACC)
+        d2_dz2 = fd.FinDiff(2, 1, 2, acc=ACC)
+        d3_dx2dy = fd.FinDiff((0, 1, 2), (1, 1, 1), acc=ACC)
+        d3_dx2dz = fd.FinDiff((0, 1, 2), (2, 1, 1), acc=ACC)
+        d3_dxdy2 = fd.FinDiff((0, 1, 1), (1, 1, 2), acc=ACC)
+        d3_dxdydz = fd.FinDiff((0, 1, 1), (1, 1, 1), (2, 1, 1), acc=ACC)
+        d3_dy2dz = fd.FinDiff((1, 1, 2), (2, 1, 1), acc=ACC)
+        d3_dxdz2 = fd.FinDiff((0, 1, 1), (2, 1, 2), acc=ACC)
+        d3_dydz2 = fd.FinDiff((1, 1, 1), (2, 1, 2), acc=ACC)
+        d4_dx2dy2 = fd.FinDiff((0, 1, 2), (1, 1, 2), acc=ACC)
+        d4_dx2dz2 = fd.FinDiff((0, 1, 2), (2, 1, 2), acc=ACC)
+        d4_dy2dz2 = fd.FinDiff((1, 1, 2), (2, 1, 2), acc=ACC)
+        d4_dx2dydz = fd.FinDiff((0, 1, 2), (1, 1, 1), (2, 1, 1), acc=ACC)
+        d4_dxdy2dz = fd.FinDiff((0, 1, 1), (1, 1, 2), (2, 1, 1), acc=ACC)
+        d4_dxdydz2 = fd.FinDiff((0, 1, 1), (1, 1, 1), (2, 1, 2), acc=ACC)
+        d5_dx2dy2dz = fd.FinDiff((0, 1, 2), (1, 1, 2), (2, 1, 1), acc=ACC)
+        d5_dx2dydz2 = fd.FinDiff((0, 1, 2), (1, 1, 1), (2, 1, 2), acc=ACC)
+        d5_dxdy2dz2 = fd.FinDiff((0, 1, 1), (1, 1, 2), (2, 1, 2), acc=ACC)
+        d6_dx2dy2dz2 = fd.FinDiff((0, 1, 2), (1, 1, 2), (2, 1, 2), acc=ACC)
+        
+        self.f3D_deriv = []
+        self.f3D_deriv.append(d_dx(self.f3D))
+        self.f3D_deriv.append(d_dy(self.f3D))
+        self.f3D_deriv.append(d_dz(self.f3D))
+        f3D_xx = d2_dx2(self.f3D)
+        f3D_xy = d2_dxdy(self.f3D)
+        f3D_xz = d2_dxdz(self.f3D)
+        f3D_yy = d2_dy2(self.f3D)
+        f3D_yz = d2_dydz(self.f3D)
+        f3D_zz = d2_dz2(self.f3D)
+        f3D_xxy = d3_dx2dy(self.f3D)
+        f3D_xxz = d3_dx2dz(self.f3D)
+        f3D_xyy = d3_dxdy2(self.f3D)
+        f3D_xyz = d3_dxdydz(self.f3D)
+        f3D_yyz = d3_dy2dz(self.f3D)
+        f3D_xzz = d3_dxdz2(self.f3D)
+        f3D_yzz = d3_dydz2(self.f3D)
+        f3D_xxyy = d4_dx2dy2(self.f3D)
+        f3D_xxzz = d4_dx2dz2(self.f3D)
+        f3D_yyzz = d4_dy2dz2(self.f3D)
+        f3D_xxyz = d4_dx2dydz(self.f3D)
+        f3D_xyyz = d4_dxdy2dz(self.f3D)
+        f3D_xyzz = d4_dxdydz2(self.f3D)
+        f3D_xxyyz = d5_dx2dy2dz(self.f3D)
+        f3D_xxyzz = d5_dx2dydz2(self.f3D)
+        f3D_xyyzz = d5_dxdy2dz2(self.f3D)
+        f3D_xxyyzz = d6_dx2dy2dz2(self.f3D)
+        
+        fx = np.reshape(self.f3D_deriv[0], (nPosx * nPosy * nPosz, ), order='F')
+        fy = np.reshape(self.f3D_deriv[1], (nPosx * nPosy * nPosz, ), order='F')
+        fz = np.reshape(self.f3D_deriv[2], (nPosx * nPosy * nPosz, ), order='F')
+        fxx = np.reshape(f3D_xx, (nPosx * nPosy * nPosz, ), order='F')
+        fxy = np.reshape(f3D_xy, (nPosx * nPosy * nPosz, ), order='F')
+        fxz = np.reshape(f3D_xz, (nPosx * nPosy * nPosz, ), order='F')
+        fyy = np.reshape(f3D_yy, (nPosx * nPosy * nPosz, ), order='F')
+        fyz = np.reshape(f3D_yz, (nPosx * nPosy * nPosz, ), order='F')
+        fzz = np.reshape(f3D_zz, (nPosx * nPosy * nPosz, ), order='F')
+        fxxy = np.reshape(f3D_xxy, (nPosx * nPosy * nPosz, ), order='F')
+        fxxz = np.reshape(f3D_xxz, (nPosx * nPosy * nPosz, ), order='F')
+        fxyy = np.reshape(f3D_xyy, (nPosx * nPosy * nPosz, ), order='F')
+        fxyz = np.reshape(f3D_xyz, (nPosx * nPosy * nPosz, ), order='F')
+        fyyz = np.reshape(f3D_yyz, (nPosx * nPosy * nPosz, ), order='F')
+        fxzz = np.reshape(f3D_xzz, (nPosx * nPosy * nPosz, ), order='F')
+        fyzz = np.reshape(f3D_yzz, (nPosx * nPosy * nPosz, ), order='F')
+        fxxyy = np.reshape(f3D_xxyy, (nPosx * nPosy * nPosz, ), order='F')
+        fxxzz = np.reshape(f3D_xxzz, (nPosx * nPosy * nPosz, ), order='F')
+        fyyzz = np.reshape(f3D_yyzz, (nPosx * nPosy * nPosz, ), order='F')
+        fxxyz = np.reshape(f3D_xxyz, (nPosx * nPosy * nPosz, ), order='F')
+        fxyyz = np.reshape(f3D_xyyz, (nPosx * nPosy * nPosz, ), order='F')
+        fxyzz = np.reshape(f3D_xyzz, (nPosx * nPosy * nPosz, ), order='F')
+        fxxyyz = np.reshape(f3D_xxyyz, (nPosx * nPosy * nPosz, ), order='F')
+        fxxyzz = np.reshape(f3D_xxyzz, (nPosx * nPosy * nPosz, ), order='F')
+        fxyyzz = np.reshape(f3D_xyyzz, (nPosx * nPosy * nPosz, ), order='F')
+        fxxyyzz = np.reshape(f3D_xxyyzz, (nPosx * nPosy * nPosz, ), order='F')
+
+        self.Bn = np.array([self.inputfield[:, 3], fx, fy, fz,
+                            fxx, fxy, fxz, fyy, fyz, fzz,
+                            fxxy, fxxz, fxyy, fxyz, fyyz, fxzz, fyzz,
+                            fxxyy, fxxzz, fyyzz, fxxyz, fxyyz, fxyzz,
+                            fxxyyz, fxxyzz, fxyyzz,
+                            fxxyyzz])
         # precalculate all coefficients
         # self.allCoeffs()
 
@@ -18,7 +113,10 @@ class TriquinticScalarInterpolator(TriquinticInterpolatorBase):
         # Find other vertices of current cuboid, and all neighbours in 6x6x6 neighbouring array
         inds = self.neighbourInd(realindex)
         # Alpha coefficients
-        self.alphan[:, alphaindex] = np.dot(self.A, self.Bn[inds])
+        vals_unit_cube = self.Bn[:, inds]
+        vals_unit_cube = np.reshape(vals_unit_cube, (len(inds) * 27, ), order='C')[:]
+        # self.alphan[:, alphaindex] = np.dot(self.A, self.Bn[inds])
+        self.alphan[:, alphaindex] = np.dot(self.A, vals_unit_cube)
         self.alphamask[alphaindex] = 1
 
     def field(self, xi):

@@ -617,30 +617,37 @@ class TriquinticInterpolatorBase:
             D[j, C[i] - 2 - 12 - 72] = 1/64
         
 
-        A = np.matmul(Bm1, D)
+        # A = np.matmul(Bm1, D)
+        ## Turning to findiff
+        A = Bm1
         return A
 
     def neighbourInd(self, ind0):
         # For base index ind0 this finds all 216 vertices of the 5x5x5 range of cuboids around it
         # It also returns the 7 neighbouring points
-        newind0 = ind0 - 2 - 2 * (self.nPos[0] + 5) * (self.nPos[1] + 5) - 2 * (self.nPos[1] + 5)
-        bInds = np.zeros(216)
-        bInds[0] = newind0
-        bInds[1] = bInds[0] + 1
-        bInds[2] = bInds[1] + 1
-        bInds[3] = bInds[2] + 1
-        bInds[4] = bInds[3] + 1
-        bInds[5] = bInds[4] + 1
-        bInds[6:12] = bInds[:6] + self.nPos[0] + 5
-        bInds[12:18] = bInds[6:12] + self.nPos[0] + 5
-        bInds[18:24] = bInds[12:18] + self.nPos[0] + 5
-        bInds[24:30] = bInds[18:24] + self.nPos[0] + 5
-        bInds[30:36] = bInds[24:30] + self.nPos[0] + 5
-        bInds[36:72] = bInds[:36] + (self.nPos[0] + 5) * (self.nPos[1] + 5)
-        bInds[72:108] = bInds[36:72] + (self.nPos[0] + 5) * (self.nPos[1] + 5)
-        bInds[108:144] = bInds[72:108] + (self.nPos[0] + 5) * (self.nPos[1] + 5)
-        bInds[144:180] = bInds[108:144] + (self.nPos[0] + 5) * (self.nPos[1] + 5)
-        bInds[180:216] = bInds[144:180] + (self.nPos[0] + 5) * (self.nPos[1] + 5)
+        # newind0 = ind0 - 2 - 2 * (self.nPos[0] + 5) * (self.nPos[1] + 5) - 2 * (self.nPos[1] + 5)
+        # bInds = np.zeros(216)
+        # bInds[0] = newind0
+        # bInds[1] = bInds[0] + 1
+        # bInds[2] = bInds[1] + 1
+        # bInds[3] = bInds[2] + 1
+        # bInds[4] = bInds[3] + 1
+        # bInds[5] = bInds[4] + 1
+        # bInds[6:12] = bInds[:6] + self.nPos[0] + 5
+        # bInds[12:18] = bInds[6:12] + self.nPos[0] + 5
+        # bInds[18:24] = bInds[12:18] + self.nPos[0] + 5
+        # bInds[24:30] = bInds[18:24] + self.nPos[0] + 5
+        # bInds[30:36] = bInds[24:30] + self.nPos[0] + 5
+        # bInds[36:72] = bInds[:36] + (self.nPos[0] + 5) * (self.nPos[1] + 5)
+        # bInds[72:108] = bInds[36:72] + (self.nPos[0] + 5) * (self.nPos[1] + 5)
+        # bInds[108:144] = bInds[72:108] + (self.nPos[0] + 5) * (self.nPos[1] + 5)
+        # bInds[144:180] = bInds[108:144] + (self.nPos[0] + 5) * (self.nPos[1] + 5)
+        # bInds[180:216] = bInds[144:180] + (self.nPos[0] + 5) * (self.nPos[1] + 5)
+        bInds = np.zeros(8)
+        bInds[0] = ind0
+        bInds[1] = ind0 + 1
+        bInds[2:4] = bInds[0:2] + self.nPos[0] + 3
+        bInds[4:8] = bInds[:4] + (self.nPos[1] + 3) * (self.nPos[0] + 3)
         bInds = bInds.astype(int)
         return bInds
 
