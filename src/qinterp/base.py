@@ -659,9 +659,9 @@ class TriquinticInterpolatorBase:
     def nan_out_of_bounds(self, query):
         # Removes particles that are outside of interpolation volume
         query[np.where(query[:, 0] < self.xIntMin)[0]] = np.nan
-        query[np.where(query[:, 0] > self.xIntMax)[0]] = np.nan
+        query[np.where(query[:, 0] >= self.xIntMax)[0]] = np.nan
         query[np.where(query[:, 1] < self.yIntMin)[0]] = np.nan
-        query[np.where(query[:, 1] > self.yIntMax)[0]] = np.nan
+        query[np.where(query[:, 1] >= self.yIntMax)[0]] = np.nan
         query[np.where(query[:, 2] < self.zIntMin)[0]] = np.nan
-        query[np.where(query[:, 2] > self.zIntMax)[0]] = np.nan
+        query[np.where(query[:, 2] >= self.zIntMax)[0]] = np.nan
         return query
