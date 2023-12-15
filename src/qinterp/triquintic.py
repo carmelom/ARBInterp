@@ -2,10 +2,11 @@ import numpy as np
 import findiff as fd
 from .base import TriquinticInterpolatorBase
 
+_ACC = 6
 
 class TriquinticScalarInterpolator(TriquinticInterpolatorBase):
 
-    def __init__(self, field, *args, **kwargs):
+    def __init__(self, field, accuracy=_ACC, *args, **kwargs):
         super().__init__(field, *args, **kwargs)
         self.alphan = np.zeros((216, self.nc + 1))
         self.alphan[:, -1] = np.nan
@@ -15,7 +16,7 @@ class TriquinticScalarInterpolator(TriquinticInterpolatorBase):
         nPosy = self.nPos[1] + 5
         nPosz = self.nPos[2] + 5
         self.f3D = np.reshape(self.inputfield[:,3], (nPosx, nPosy, nPosz), order='F')
-        ACC = 6
+        ACC = accuracy
         d_dx = fd.FinDiff(0, 1, 1, acc=ACC)
         d_dy = fd.FinDiff(1, 1, 1, acc=ACC)
         d_dz = fd.FinDiff(2, 1, 1, acc=ACC)

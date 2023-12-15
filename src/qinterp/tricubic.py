@@ -8,10 +8,11 @@ import numpy as np
 import findiff as fd
 from .base import TricubicInterpolatorBase
 
+_ACC = 6
 
 class TricubicScalarInterpolator(TricubicInterpolatorBase):
 
-    def __init__(self, field, *args, **kwargs):
+    def __init__(self, field, accuracy=_ACC, *args, **kwargs):
         super().__init__(field, *args, **kwargs)
         self.alphan = np.zeros((64, self.nc + 1))
         self.alphan[:, -1] = np.nan
@@ -26,7 +27,7 @@ class TricubicScalarInterpolator(TricubicInterpolatorBase):
         # f3D_xz = np.gradient(self.f3D_deriv[0], axis=2)
         # f3D_yz = np.gradient(self.f3D_deriv[1], axis=2)
         # f3D_xyz = np.gradient(f3D_xy, axis=2)
-        ACC = 6
+        ACC = accuracy
         d_dx = fd.FinDiff(0, 1, 1, acc=ACC)
         d_dy = fd.FinDiff(1, 1, 1, acc=ACC)
         d_dz = fd.FinDiff(2, 1, 1, acc=ACC)
